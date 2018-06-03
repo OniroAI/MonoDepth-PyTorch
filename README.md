@@ -14,6 +14,4 @@ Purpose of this repository is to make more lightweighted model for depth maps co
 
 ## Train results
 
-<p align="center">
-  <img src="https://media.giphy.com/media/3rSScDLucWZYTxv3Is/giphy.gif" alt="monodepth">
-</p>
+![demo.gif animation](readme_images/demo.gif)
