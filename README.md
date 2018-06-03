@@ -5,14 +5,17 @@ Original code and paper could be found via following links:
 1. [Original repo](https://github.com/mrharicot/monodepth)
 2. [Original paper](https://arxiv.org/abs/1609.03677)
 
-
 ## MonoDepth-PyTorch
 This repository contains code and additional parts for the PyTorch port of the MonoDepth Deep Learning algorithm. For more information about original work please visit [author's websiet](http://visual.cs.ucl.ac.uk/pubs/monoDepth/)
-
 
 ## Purpose
 
 Purpose of this repository is to make more lightweighted model for depth estimation with better accuracy.
+
+## Train results
+
+The following results may be obtained using the model pretrained for **150** epochs on the whole dataset with initial **lr = 0.01**
+![demo.gif animation](readme_images/demo.gif)
 
 ## Dataset
 ### KITTI
@@ -24,12 +27,6 @@ Raw dataset (about 175 GB) can be downloaded by running:
 ```shell
 wget -i utils/kitti_archives_to_download.txt -P ~/my/output/folder/
 ```
-
-## Train results
-
-The following results may be obtained using the model pretrained for **150** epochs on the whole dataset with initial **lr = 0.01**
-![demo.gif animation](readme_images/demo.gif)
-
 ## Dataloader
 Dataloader assumes the following structure of the folder with train examples (**'data_dir'** argument contains path to that folder):
     <p>It contains subfolders with folders "image_02/data" for left images and  "image_03/data" for right images
@@ -70,7 +67,7 @@ Model class from main_monodepth_pytorch.py should be initialized with following 
  - 'model': model for encoder (resnet18 or resnet50)
  - 'mode': train or test
  
-<p>After that calling train() on Model class object starts training process
+<p>After that calling test() on Model class object starts testing process
     
 ## Requirements
 This code was tested with PyTorch 0.4.0, CUDA 9.1 and Ubuntu 16.04.
