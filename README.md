@@ -27,12 +27,34 @@ Raw dataset (about 175 GB) can be downloaded by running:
 ```shell
 wget -i kitti_archives_to_download.txt -P ~/my/output/folder/
 ```
-kitti_archives_to_download.txt may be found in [original repo](https://github.com/mrharicot/monodepth/blob/master/utils/kitti_archives_to_download.txt)
+kitti_archives_to_download.txt may be found in the [original repo](https://github.com/mrharicot/monodepth/blob/master/utils/kitti_archives_to_download.txt).
 
 ## Dataloader
 Dataloader assumes the following structure of the folder with train examples (**'data_dir'** argument contains path to that folder):
-    <p>It contains subfolders with folders "image_02/data" for left images and  "image_03/data" for right images.
-    Such structure is default for KITTI dataset
+It contains subfolders with folders "image_02/data" for left images and  "image_03/data" for right images.
+Such structure is default for KITTI dataset
+
+Example data folder structure:
+```
+data
+├── kitti
+│   ├── 2011_09_26_drive_0001_sync
+│   │   ├── image_02
+│   │   │   ├─ data
+│   │   │   │   ├── 0000000000.png
+│   │   │   │   └── ...
+│   │   ├── image_03
+│   │   │   ├── data
+│   │   │   │   ├── 0000000000.png
+│   │   │   │   └── ...
+│   ├── ...
+├── models
+├── output
+├── test
+│   ├── left
+│   │   ├── test_1.jpg
+│   │   └── ...
+```
     
 ## Training
 Example of training can be find in [Monodepth](Monodepth.ipynb) notebook.
@@ -54,9 +76,13 @@ Model class from main_monodepth_pytorch.py should be initialized with following 
  - 'augment_parameters':lowest and highest values for gamma, lightness and color respectively'
  - 'print_images'
  - 'print_weights'
-<p> Optionally after initialization we can load pretrained model via load model
-<p>After that calling train() on Model class object starts training process.
-<p>Also it can be started via calling main_monodepth_pytorch.py through the terminal and feeding parameters as argparse arguments.
+
+
+Optionally after initialization we can load pretrained model via load model.
+
+After that calling train() on Model class object starts training process.
+
+Also it can be started via calling main_monodepth_pytorch.py through the terminal and feeding parameters as argparse arguments.
 
 ## Pretrained model
 
@@ -74,8 +100,9 @@ Model class from main_monodepth_pytorch.py should be initialized with following 
  - 'model': model for encoder (resnet18 or resnet50)
  - 'mode': train or test
  
-<p>After that calling test() on Model class object starts testing process
-<p>Also it can be started via calling main_monodepth_pytorch.py through the terminal and feeding parameters asargparse arguments. 
+After that calling test() on Model class object starts testing process.
+
+Also it can be started via calling [main_monodepth_pytorch.py](main_monodepth_pytorch.py) through the terminal and feeding parameters asargparse arguments. 
     
 ## Requirements
 This code was tested with PyTorch 0.4.0, CUDA 9.1 and Ubuntu 16.04.
