@@ -6,7 +6,7 @@ Original code and paper could be found via following links:
 2. [Original paper](https://arxiv.org/abs/1609.03677)
 
 ## MonoDepth-PyTorch
-This repository contains code and additional parts for the PyTorch port of the MonoDepth Deep Learning algorithm. For more information about original work please visit [author's websiet](http://visual.cs.ucl.ac.uk/pubs/monoDepth/)
+This repository contains code and additional parts for the PyTorch port of the MonoDepth Deep Learning algorithm. For more information about original work please visit [author's website](http://visual.cs.ucl.ac.uk/pubs/monoDepth/)
 
 ## Purpose
 
@@ -14,7 +14,7 @@ Purpose of this repository is to make more lightweighted model for depth estimat
 
 ## Train results
 
-The following results may be obtained using the model pretrained for **150** epochs on the whole dataset with initial **lr = 0.01**
+The following results may be obtained using the model pretrained for **150** epochs on the whole dataset with initial **lr = 0.01** and **batch_size = 20** with **resnet18** as encoder.
 ![demo.gif animation](readme_images/demo.gif)
 
 ## Dataset
@@ -60,22 +60,22 @@ data
 Example of training can be find in [Monodepth](Monodepth.ipynb) notebook.
 
 Model class from main_monodepth_pytorch.py should be initialized with following params (as easydict) for training:
- - 'data_dir': path to the dataset folder
- - 'model_path': path to save the trained model
- - 'output_directory': where save dispairities for tested images
- - 'input_height'
- - 'input_width'
- - 'model': model for encoder (resnet18 or resnet50)
- - 'mode': train or test
- - 'epochs': number of epochs,
- - 'learning_rate'
- - 'batch_size'
- - 'adjust_lr': apply learning rate decay or not
- - 'tensor_type':'torch.cuda.FloatTensor' or 'torch.FloatTensor'
- - 'do_augmentation':do data augmentation or not
- - 'augment_parameters':lowest and highest values for gamma, lightness and color respectively'
- - 'print_images'
- - 'print_weights'
+ - `data_dir`: path to the dataset folder
+ - `model_path`: path to save the trained model
+ - `output_directory`: where save dispairities for tested images
+ - `input_height`
+ - `input_width`
+ - `model`: model for encoder (resnet18 or resnet50)
+ - `mode`: train or test
+ - `epochs`: number of epochs,
+ - `learning_rate`
+ - `batch_size`
+ - `adjust_lr`: apply learning rate decay or not
+ - `tensor_type`:'torch.cuda.FloatTensor' or 'torch.FloatTensor'
+ - `do_augmentation`:do data augmentation or not
+ - `augment_parameters`:lowest and highest values for gamma, lightness and color respectively
+ - `print_images`
+ - `print_weights`
 
 
 Optionally after initialization we can load pretrained model via load model.
@@ -86,19 +86,25 @@ Also it can be started via calling main_monodepth_pytorch.py through the termina
 
 ## Pretrained model
 
-One of our pretrained models which showed best results may be downloaded from [here](https://my.pcloud.com/publink/show?code=XZdFzu7ZfCAEf0uj8zRhDrBsjuEoeSo2QXak). 
+One of our pretrained models which showed best results may be downloaded from [here](https://my.pcloud.com/publink/show?code=XZdFzu7ZfCAEf0uj8zRhDrBsjuEoeSo2QXak).
+For training following parameters were used:
+`model`:'resnet18_md'
+`epochs`:150,
+`learning_rate`:1e-2,
+`batch_size`:20,
+`adjust_lr`:True 
     
 ## Testing
 Example of testing can be find in [Monodepth](Monodepth.ipynb) notebook.
 
 Model class from main_monodepth_pytorch.py should be initialized with following params (as easydict) for testing:
- - 'data_dir': path to the dataset folder
- - 'model_path': path to save the trained model
- - 'output_directory': where save dispairities for tested images
- - 'input_height'
- - 'input_width'
- - 'model': model for encoder (resnet18 or resnet50)
- - 'mode': train or test
+ - `data_dir`: path to the dataset folder
+ - `model_path`: path to save the trained model
+ - `output_directory`: where save dispairities for tested images
+ - `input_height`
+ - `input_width`
+ - `model`: model for encoder (resnet18 or resnet50)
+ - `mode`: train or test
  
 After that calling test() on Model class object starts testing process.
 
