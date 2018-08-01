@@ -3,8 +3,6 @@ import numpy as np
 import torch.nn as nn
 import torch.nn.functional as F
 
-from bilinear_sampler_pytorch import apply_disparity
-
 
 class MonodepthLoss(nn.modules.Module):
     def __init__(self, n=4, SSIM_w=0.85, disp_gradient_w=1.0, lr_w=1.0,
@@ -37,11 +35,25 @@ class MonodepthLoss(nn.modules.Module):
         gy = img[:,:,:-1,:] - img[:,:,1:,:]  # NCHW
         return gy
 
+    def apply_disparity(self, img, disp, tensor_type='torch.cuda.FloatTensor'):
+        batch_size, _, height, width = img.size()
+        
+        # Original coordinates of pixels
+        x_base = torch.linspace(-1, 1, width).repeat(batch_size, height, 1).type(tensor_type)
+        y_base = torch.linspace(-1, 1, height).repeat(batch_size, width, 1).transpose(1, 2).type(tensor_type)
+
+        # Apply shift in X direction
+        x_shifts = disp[:,0,:,:] # Disparity is passed in NCHW format with 1 channel
+        flow_field = torch.stack((x_base + x_shifts, y_base), dim=3)
+        output = F.grid_sample(img, flow_field, mode='bilinear', padding_mode='zeros')
+
+        return output
+
     def generate_image_left(self, img, disp, tensor_type):
-        return apply_disparity(img, -disp, tensor_type=tensor_type)
+        return self.apply_disparity(img, -disp, tensor_type=tensor_type)
 
     def generate_image_right(self, img, disp, tensor_type):
-        return apply_disparity(img, disp, tensor_type=tensor_type)
+        return self.apply_disparity(img, disp, tensor_type=tensor_type)
 
     def SSIM(self, x, y):
         C1 = 0.01 ** 2

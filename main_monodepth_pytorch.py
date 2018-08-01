@@ -11,7 +11,6 @@ import torch.optim as optim
 
 from loss import MonodepthLoss
 from data_loader import image_transforms, KittiLoader, ImageLoader
-import bilinear_sampler_pytorch
 import models_resnet
 
 # plot params
