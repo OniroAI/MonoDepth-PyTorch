@@ -7,19 +7,21 @@ import numpy as np
 import pandas as pd
 from torch.utils.data import Dataset, DataLoader
 
-def image_transforms(mode = 'train', tensor_type = 'torch.cuda.FloatTensor', augment_parameters = [0.8, 1.2, 0.5, 2.0, 0.8, 1.2], do_augmentation = True, transformations = None):
+def image_transforms(mode='train', tensor_type='torch.cuda.FloatTensor',
+                     augment_parameters=[0.8, 1.2, 0.5, 2.0, 0.8, 1.2],
+                     do_augmentation=True, transformations=None):
     if mode == 'train':
         data_transform = transforms.Compose([
-            ResizeImage(),
+            ResizeImage(train=True),
             RandomFlip(do_augmentation),
-            ToTensor(tensor_type),
+            ToTensor(tensor_type, train=True),
             AugmentImagePair(tensor_type, augment_parameters, do_augmentation)
         ])
         return data_transform
     elif mode == 'test':
         data_transform = transforms.Compose([
-            ResizeImage(False),
-            ToTensor(False),
+            ResizeImage(train=False),
+            ToTensor(tensor_type, train=False),
             DoTest(tensor_type),
         ])
         return data_transform
@@ -32,7 +34,7 @@ def image_transforms(mode = 'train', tensor_type = 'torch.cuda.FloatTensor', aug
     
 class ResizeImage(object):
 
-    def __init__(self, train = True):
+    def __init__(self, train=True):
         self.train = train
         self.transform = transforms.Resize((256, 512))
         
@@ -56,14 +58,13 @@ class DoTest(object):
         self.tensor_type = tensor_type
         
     def __call__(self, sample):
-        
         new_sample = torch.from_numpy(np.stack((sample, np.fliplr(sample)), 0)).type(self.tensor_type)
         return new_sample    
 
     
 class ToTensor(object):
 
-    def __init__(self, train = True, tensor_type = 'torch.cuda.FloatTensor'):
+    def __init__(self, tensor_type, train):
         self.train = train
         self.transform = transforms.ToTensor()
         self.tensor_type = tensor_type
@@ -85,7 +86,6 @@ class ToTensor(object):
 class RandomFlip(object):
 
     def __init__(self, do_augmentation):
-        
         self.transform = transforms.RandomHorizontalFlip(p=1)
         self.do_augmentation = do_augmentation
         
@@ -105,8 +105,7 @@ class RandomFlip(object):
     
 class AugmentImagePair(object):
  
-    def __init__(self, tensor_type, augment_parameters,
-                 do_augmentation):
+    def __init__(self, tensor_type, augment_parameters, do_augmentation):
         self.tensor_type = tensor_type
         self.do_augmentation = do_augmentation
         self.gamma_low = augment_parameters[0] #0.8

@@ -6,7 +6,7 @@ import torch.nn.functional as F
 
 class MonodepthLoss(nn.modules.Module):
     def __init__(self, n=4, SSIM_w=0.85, disp_gradient_w=1.0, lr_w=1.0,
-                 tensor_type = 'torch.cuda.FloatTensor'):
+                 tensor_type='torch.cuda.FloatTensor'):
         super(MonodepthLoss, self).__init__()
         self.SSIM_w = SSIM_w
         self.disp_gradient_w = disp_gradient_w
@@ -35,6 +35,7 @@ class MonodepthLoss(nn.modules.Module):
         gy = img[:,:,:-1,:] - img[:,:,1:,:]  # NCHW
         return gy
 
+<<<<<<< c10c5c0f8bf3d8fe9ec5bb6df2d6236a7ff64a8e
     def apply_disparity(self, img, disp, tensor_type='torch.cuda.FloatTensor'):
         batch_size, _, height, width = img.size()
         
@@ -54,6 +55,13 @@ class MonodepthLoss(nn.modules.Module):
 
     def generate_image_right(self, img, disp, tensor_type):
         return self.apply_disparity(img, disp, tensor_type=tensor_type)
+=======
+    def generate_image_left(self, img, disp):
+        return apply_disparity(img, -disp, tensor_type=self.tensor_type)
+
+    def generate_image_right(self, img, disp):
+        return apply_disparity(img, disp, tensor_type=self.tensor_type)
+>>>>>>> fix: Passing tensor and device types between functions
 
     def SSIM(self, x, y):
         C1 = 0.01 ** 2
@@ -115,17 +123,17 @@ class MonodepthLoss(nn.modules.Module):
         self.disp_right_est = disp_right_est
         # Generate images
         left_est  = [self.generate_image_left(right_pyramid[i],
-                     disp_left_est[i], self.tensor_type)  for i in range(self.n)]
+                     disp_left_est[i])  for i in range(self.n)]
         right_est = [self.generate_image_right(left_pyramid[i],
-                     disp_right_est[i], self.tensor_type) for i in range(self.n)]
+                     disp_right_est[i]) for i in range(self.n)]
         self.left_est = left_est
         self.right_est = right_est
 
         # L-R Consistency
         right_left_disp = [self.generate_image_left(disp_right_est[i],
-                           disp_left_est[i], self.tensor_type) for i in range(self.n)]
+                           disp_left_est[i]) for i in range(self.n)]
         left_right_disp = [self.generate_image_right(disp_left_est[i],
-                           disp_right_est[i], self.tensor_type) for i in range(self.n)]
+                           disp_right_est[i]) for i in range(self.n)]
 
         # Disparities smoothness
         disp_left_smoothness  = self.disp_smoothness(disp_left_est,
