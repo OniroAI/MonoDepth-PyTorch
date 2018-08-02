@@ -5,14 +5,12 @@ import torch.nn.functional as F
 
 
 class MonodepthLoss(nn.modules.Module):
-    def __init__(self, n=4, SSIM_w=0.85, disp_gradient_w=1.0, lr_w=1.0,
-                 tensor_type='torch.cuda.FloatTensor'):
+    def __init__(self, n=4, SSIM_w=0.85, disp_gradient_w=1.0, lr_w=1.0):
         super(MonodepthLoss, self).__init__()
         self.SSIM_w = SSIM_w
         self.disp_gradient_w = disp_gradient_w
         self.lr_w = lr_w
         self.n = n
-        self.tensor_type = tensor_type
 
     def scale_pyramid(self, img, num_scales):
         scaled_imgs = [img]
@@ -35,13 +33,12 @@ class MonodepthLoss(nn.modules.Module):
         gy = img[:,:,:-1,:] - img[:,:,1:,:]  # NCHW
         return gy
 
-<<<<<<< c10c5c0f8bf3d8fe9ec5bb6df2d6236a7ff64a8e
-    def apply_disparity(self, img, disp, tensor_type='torch.cuda.FloatTensor'):
+    def apply_disparity(self, img, disp):
         batch_size, _, height, width = img.size()
         
         # Original coordinates of pixels
-        x_base = torch.linspace(-1, 1, width).repeat(batch_size, height, 1).type(tensor_type)
-        y_base = torch.linspace(-1, 1, height).repeat(batch_size, width, 1).transpose(1, 2).type(tensor_type)
+        x_base = torch.linspace(-1, 1, width).repeat(batch_size, height, 1).type_as(img)
+        y_base = torch.linspace(-1, 1, height).repeat(batch_size, width, 1).transpose(1, 2).type_as(img)
 
         # Apply shift in X direction
         x_shifts = disp[:,0,:,:] # Disparity is passed in NCHW format with 1 channel
@@ -50,18 +47,11 @@ class MonodepthLoss(nn.modules.Module):
 
         return output
 
-    def generate_image_left(self, img, disp, tensor_type):
-        return self.apply_disparity(img, -disp, tensor_type=tensor_type)
-
-    def generate_image_right(self, img, disp, tensor_type):
-        return self.apply_disparity(img, disp, tensor_type=tensor_type)
-=======
     def generate_image_left(self, img, disp):
-        return apply_disparity(img, -disp, tensor_type=self.tensor_type)
+        return self.apply_disparity(img, -disp)
 
     def generate_image_right(self, img, disp):
-        return apply_disparity(img, disp, tensor_type=self.tensor_type)
->>>>>>> fix: Passing tensor and device types between functions
+        return self.apply_disparity(img, disp)
 
     def SSIM(self, x, y):
         C1 = 0.01 ** 2

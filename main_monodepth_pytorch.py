@@ -121,7 +121,7 @@ class Model:
                     do_augmentation=args.do_augmentation)
             train_datasets = [KittiLoader(os.path.join(args.data_dir,
                               data_dir), True,
-                              transform=data_transform) for data_dir i  
+                              transform=data_transform) for data_dir in
                               data_dirs]
             train_dataset = ConcatDataset(train_datasets)
             self.n_img = len(train_dataset)
@@ -136,8 +136,7 @@ class Model:
             self.loss_function = MonodepthLoss(
                     n=4,
                     SSIM_w=0.85,
-                    disp_gradient_w=0.1, lr_w=1,
-                    tensor_type=args.tensor_type).to(self.device)
+                    disp_gradient_w=0.1, lr_w=1).to(self.device)
             if args.model == 'resnet50_md':
                 self.model = models_resnet.resnet50_md(3)
             elif args.model == 'resnet18_md':
@@ -182,8 +181,8 @@ class Model:
             c_time = time.time()
             for data in self.train_loader:
                 # Load data
-                left = data['left_image'].to(self.device)
-                right = data['right_image'].to(self.device)
+                left = data['left_image']
+                right = data['right_image']
 
                 # One optimization iteration
                 self.optimizer.zero_grad()
@@ -265,17 +264,17 @@ class Model:
                                   self.input_height, self.input_width),
                                   dtype=np.float32)
         with torch.no_grad():
-            for (i, data) in enumerate(self.test_loader, 0):
+            for (i, data) in enumerate(self.test_loader):
                 # Get the inputs
                 left = data.squeeze()
-                left = left.to(self.device)
 
                 # Do a forward pass
+                # print(left.type())
                 disps = self.model(left)
                 disp = disps[0][:, 0, :, :].unsqueeze(1)
                 disparities[i] = disp[0].squeeze()
                 disparities_pp[i] = \
-                    post_process_disparity(disp.squeeze().numpy())
+                    post_process_disparity(disp.squeeze().cpu().numpy())
 
         np.save(self.output_directory + '/disparities.npy', disparities)
         np.save(self.output_directory + '/disparities_pp.npy',
@@ -295,3 +294,4 @@ def main(args):
 
 if __name__ == '__main__':
     main()
+
