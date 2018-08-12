@@ -7,20 +7,24 @@ import numpy as np
 import pandas as pd
 from torch.utils.data import Dataset, DataLoader
 
-def image_transforms(mode = 'train', tensor_type = 'torch.cuda.FloatTensor', augment_parameters = [0.8, 1.2, 0.5, 2.0, 0.8, 1.2], do_augmentation = True, transformations = None):
+import matplotlib.pyplot as plt
+
+def image_transforms(mode='train', tensor_type='torch.cuda.FloatTensor',
+                     augment_parameters=[0.8, 1.2, 0.5, 2.0, 0.8, 1.2],
+                     do_augmentation=True, transformations=None):
     if mode == 'train':
         data_transform = transforms.Compose([
-            ResizeImage(),
+            ResizeImage(train=True),
             RandomFlip(do_augmentation),
-            ToTensor(tensor_type),
-            AugmentImagePair(tensor_type, augment_parameters, do_augmentation)
+            ToTensor(tensor_type, train=True),
+            AugmentImagePair(augment_parameters, do_augmentation)
         ])
         return data_transform
     elif mode == 'test':
         data_transform = transforms.Compose([
-            ResizeImage(False),
-            ToTensor(False),
-            DoTest(tensor_type),
+            ResizeImage(train=False),
+            ToTensor(tensor_type, train=False),
+            DoTest(),
         ])
         return data_transform
     elif mode == 'custom':
@@ -31,8 +35,7 @@ def image_transforms(mode = 'train', tensor_type = 'torch.cuda.FloatTensor', aug
     
     
 class ResizeImage(object):
-
-    def __init__(self, train = True):
+    def __init__(self, train=True):
         self.train = train
         self.transform = transforms.Resize((256, 512))
         
@@ -50,20 +53,14 @@ class ResizeImage(object):
         return sample
     
 
-class DoTest(object):
-    
-    def __init__(self, tensor_type):
-        self.tensor_type = tensor_type
-        
+class DoTest(object):        
     def __call__(self, sample):
-        
-        new_sample = torch.from_numpy(np.stack((sample, np.fliplr(sample)), 0)).type(self.tensor_type)
-        return new_sample    
+        new_sample = torch.from_numpy(np.stack((sample, np.fliplr(sample)), 0)).type_as(sample)
+        return new_sample
 
     
 class ToTensor(object):
-
-    def __init__(self, train = True, tensor_type = 'torch.cuda.FloatTensor'):
+    def __init__(self, tensor_type, train):
         self.train = train
         self.transform = transforms.ToTensor()
         self.tensor_type = tensor_type
@@ -83,9 +80,7 @@ class ToTensor(object):
     
     
 class RandomFlip(object):
-
     def __init__(self, do_augmentation):
-        
         self.transform = transforms.RandomHorizontalFlip(p=1)
         self.do_augmentation = do_augmentation
         
@@ -103,11 +98,8 @@ class RandomFlip(object):
         return sample
     
     
-class AugmentImagePair(object):
- 
-    def __init__(self, tensor_type, augment_parameters,
-                 do_augmentation):
-        self.tensor_type = tensor_type
+class AugmentImagePair(object): 
+    def __init__(self, augment_parameters, do_augmentation):
         self.do_augmentation = do_augmentation
         self.gamma_low = augment_parameters[0] #0.8
         self.gamma_high = augment_parameters[1] #1.2
@@ -117,27 +109,26 @@ class AugmentImagePair(object):
         self.color_high = augment_parameters[5] #1.2
 
     def __call__(self, sample):
-        left_image = sample['left_image'].type(self.tensor_type)
-        right_image = sample['right_image'].type(self.tensor_type)
+        left_image = sample['left_image']
+        right_image = sample['right_image']
         p = np.random.uniform(0, 1, 1)
         if self.do_augmentation:
             if p > 0.5:
                 # randomly shift gamma
-                random_gamma = torch.from_numpy(np.random.uniform(self.gamma_low, self.gamma_high, 1)).type(self.tensor_type)
+                random_gamma = np.random.uniform(self.gamma_low, self.gamma_high)
                 left_image_aug  = left_image  ** random_gamma
                 right_image_aug = right_image ** random_gamma
 
                 # randomly shift brightness
-                random_brightness =  torch.from_numpy(np.random.uniform(self.brightness_low, self.brightness_high, 1)).type(self.tensor_type)
+                random_brightness = np.random.uniform(self.brightness_low, self.brightness_high)
                 left_image_aug  =  left_image_aug * random_brightness
                 right_image_aug = right_image_aug * random_brightness
 
                 # randomly shift color
-                random_colors =  torch.from_numpy(np.random.uniform(self.color_low, self.color_high, 3)).type(self.tensor_type)
-                white = torch.ones([np.shape(left_image)[1], np.shape(left_image)[2]]).type(self.tensor_type)
-                color_image = torch.stack([white * random_colors[i] for i in range(3)], dim=0)
-                left_image_aug  *= color_image
-                right_image_aug *= color_image
+                random_colors = np.random.uniform(self.color_low, self.color_high, 3)
+                for i in range(3):
+                    left_image_aug[i,:,:] *= random_colors[i]
+                    right_image_aug[i,:,:] *= random_colors[i]
 
                 # saturate
                 left_image_aug  = torch.clamp(left_image_aug,  0, 1)

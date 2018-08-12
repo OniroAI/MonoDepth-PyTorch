@@ -104,8 +104,7 @@ def post_process_disparity(disp):
     (l, _) = np.meshgrid(np.linspace(0, 1, w), np.linspace(0, 1, h))
     l_mask = 1.0 - np.clip(20 * (l - 0.05), 0, 1)
     r_mask = np.fliplr(l_mask)
-    return r_mask * l_disp + l_mask * r_disp + (1.0 - l_mask - r_mask) \
-        * m_disp
+    return r_mask * l_disp + l_mask * r_disp + (1.0 - l_mask - r_mask) * m_disp
 
 
 class Model:
@@ -113,6 +112,7 @@ class Model:
     def __init__(self, args):
         self.args = args
         if args.mode == 'train':
+            # Load data
             data_dirs = os.listdir(args.data_dir)
             data_transform = image_transforms(
                     mode=args.mode,
@@ -124,19 +124,19 @@ class Model:
                               transform=data_transform) for data_dir in
                               data_dirs]
             train_dataset = ConcatDataset(train_datasets)
-            self.n_img = train_dataset.__len__()
-            print ('Use a dataset with', self.n_img, 'images')
+            self.n_img = len(train_dataset)
+            print('Use a dataset with', self.n_img, 'images')
             self.train_loader = DataLoader(train_dataset,
-                                           batch_size=args.batch_size,
+                                           batch_size=args.batch_size,  
                                            shuffle=True)
+            # Set up model
             self.device = torch.device((
                 'cuda:0' if torch.cuda.is_available() and
                 args.tensor_type == 'torch.cuda.FloatTensor' else 'cpu'))
             self.loss_function = MonodepthLoss(
                     n=4,
                     SSIM_w=0.85,
-                    disp_gradient_w=0.1, lr_w=1,
-                    tensor_type=args.tensor_type).to(self.device)
+                    disp_gradient_w=0.1, lr_w=1).to(self.device)
             if args.model == 'resnet50_md':
                 self.model = models_resnet.resnet50_md(3)
             elif args.model == 'resnet18_md':
@@ -147,27 +147,21 @@ class Model:
             if args.tensor_type == 'torch.cuda.FloatTensor':
                 torch.cuda.synchronize()
         elif args.mode == 'test':
+            # Load data
             self.output_directory = args.output_directory
-
-            # loading data
-
             self.input_height = args.input_height
             self.input_width = args.input_width
             data_transform = image_transforms(mode=args.mode,
                                               tensor_type=args.tensor_type)
-
             test_dataset = ImageLoader(args.data_dir, False,
                                        transform=data_transform)
-            self.num_test_examples = test_dataset.__len__()
+            self.num_test_examples = len(test_dataset)
             self.test_loader = DataLoader(test_dataset, batch_size=1,
                                           shuffle=False)
-
-            # set up CPU device
-
-            self.device = torch.device('cpu')
-
-            # define model
-
+            # Set up model
+            self.device = torch.device((
+                'cuda:0' if torch.cuda.is_available() and
+                args.tensor_type == 'torch.cuda.FloatTensor' else 'cpu'))
             if args.model == 'resnet50_md':
                 self.model = models_resnet.resnet50_md(3)
             elif args.model == 'resnet18_md':
@@ -176,14 +170,8 @@ class Model:
             self.model = self.model.to(self.device)
 
     def train(self):
-
-        # Start training
-
         losses = []
-        best_loss = 1e19  # Just a big number
-
-        # Loop over the dataset multiple times
-
+        best_loss = float('Inf')
         self.model.train()
         for epoch in range(self.args.epochs):
             if self.args.adjust_lr:
@@ -191,28 +179,20 @@ class Model:
                                      self.args.learning_rate)
             running_loss = 0.0
             c_time = time.time()
-            for (i, data) in enumerate(self.train_loader, 0):
+            for data in self.train_loader:
+                # Load data
+                left = data['left_image']
+                right = data['right_image']
 
-                # get the inputs
-
-                left = data['left_image'].to(self.device)
-                right = data['right_image'].to(self.device)
-
-                # zero the parameter gradients
-
+                # One optimization iteration
                 self.optimizer.zero_grad()
-
-                # forward + backward + optimize
-
                 disps = self.model(left)
                 loss = self.loss_function(disps, [left, right])
                 loss.backward()
                 self.optimizer.step()
-
                 losses.append(loss.item())
 
-                # print statistics
-
+                # Print statistics
                 if self.args.print_weights:
                     j = 1
                     for (name, parameter) in self.model.named_parameters():
@@ -248,10 +228,8 @@ class Model:
                                0)))
                     plt.show()
 
-                running_loss += loss.item()
-
             # Estimate loss per image
-
+            running_loss += loss.item()
             running_loss /= self.n_img / self.args.batch_size
             print (
                 'Epoch:',
@@ -279,9 +257,6 @@ class Model:
 
     def test(self):
         self.model.eval()
-
-        # start testing
-
         disparities = np.zeros((self.num_test_examples,
                                self.input_height, self.input_width),
                                dtype=np.float32)
@@ -289,21 +264,17 @@ class Model:
                                   self.input_height, self.input_width),
                                   dtype=np.float32)
         with torch.no_grad():
-
-            for (i, data) in enumerate(self.test_loader, 0):
-
-                # get the inputs
-
+            for (i, data) in enumerate(self.test_loader):
+                # Get the inputs
                 left = data.squeeze()
-                left = left.to(self.device)
 
-                # forward
-
+                # Do a forward pass
+                # print(left.type())
                 disps = self.model(left)
                 disp = disps[0][:, 0, :, :].unsqueeze(1)
                 disparities[i] = disp[0].squeeze()
                 disparities_pp[i] = \
-                    post_process_disparity(disp.squeeze().numpy())
+                    post_process_disparity(disp.squeeze().cpu().numpy())
 
         np.save(self.output_directory + '/disparities.npy', disparities)
         np.save(self.output_directory + '/disparities_pp.npy',
