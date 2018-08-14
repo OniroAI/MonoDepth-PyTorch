@@ -227,9 +227,9 @@ class Model:
                                :, :, :].cpu().detach().numpy(), (1, 2,
                                0)))
                     plt.show()
+                running_loss += loss.item()
 
             # Estimate loss per image
-            running_loss += loss.item()
             running_loss /= self.n_img / self.args.batch_size
             print (
                 'Epoch:',
