@@ -15,6 +15,7 @@ Purpose of this repository is to make more lightweighted model for depth estimat
 ## Train results
 
 The following results may be obtained using the model pretrained for **150** epochs on the whole dataset with initial **lr = 0.01** and **batch_size = 20** with **resnet18** as encoder.
+
 ![demo.gif animation](readme_images/demo.gif)
 
 ## Dataset
