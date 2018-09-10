@@ -26,10 +26,14 @@ class MonodepthLoss(nn.modules.Module):
         return scaled_imgs
 
     def gradient_x(self, img):
+        # Pad input to keep output size consistent
+        img = F.pad(img, (0, 1, 0, 0), mode="replicate")
         gx = img[:,:,:,:-1] - img[:,:,:,1:]  # NCHW
         return gx
 
     def gradient_y(self, img):
+        # Pad input to keep output size consistent
+        img = F.pad(img, (0, 0, 0, 1), mode="replicate")
         gy = img[:,:,:-1,:] - img[:,:,1:,:]  # NCHW
         return gy
 
@@ -90,7 +94,8 @@ class MonodepthLoss(nn.modules.Module):
         smoothness_y = [disp_gradients_y[i] * weights_y[i]\
                         for i in range(self.n)]
 
-        return smoothness_x + smoothness_y
+        return [torch.abs(smoothness_x[i]) + torch.abs(smoothness_y[i])
+                for i in range(self.n)]
 
     def forward(self, input, target):
         """
