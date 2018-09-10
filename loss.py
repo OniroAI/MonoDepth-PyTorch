@@ -94,7 +94,8 @@ class MonodepthLoss(nn.modules.Module):
         smoothness_y = [disp_gradients_y[i] * weights_y[i]\
                         for i in range(self.n)]
 
-        return [smoothness_x[i] + smoothness_y[i] for i in range(self.n)]
+        return [torch.abs(smoothness_x[i]) + torch.abs(smoothness_y[i])
+                for i in range(self.n)]
 
     def forward(self, input, target):
         """
