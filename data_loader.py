@@ -35,9 +35,9 @@ def image_transforms(mode='train', tensor_type='torch.cuda.FloatTensor',
     
     
 class ResizeImage(object):
-    def __init__(self, train=True):
+    def __init__(self, train=True, size=(256, 512)):
         self.train = train
-        self.transform = transforms.Resize((256, 512))
+        self.transform = transforms.Resize(size)
         
     def __call__(self, sample):
         if self.train:
@@ -55,7 +55,7 @@ class ResizeImage(object):
 
 class DoTest(object):        
     def __call__(self, sample):
-        new_sample = torch.from_numpy(np.stack((sample, np.fliplr(sample)), 0)).type_as(sample)
+        new_sample = torch.from_numpy(np.stack((sample, torch.flip(sample, [2])), 0)).type_as(sample)
         return new_sample
 
     
@@ -139,39 +139,6 @@ class AugmentImagePair(object):
         else:
             sample = {'left_image': left_image, 'right_image': right_image}
         return sample
-    
-    
-class ImageLoader(Dataset):
-    def __init__(self, root_dir, training, transform = None):
-        left_dir = os.path.join(root_dir, 'left')
-        self.left_paths = sorted([os.path.join(left_dir, fname) for fname\
-                           in os.listdir(left_dir)])
-        if training:
-            right_dir = os.path.join(root_dir, 'right')
-            self.right_paths = sorted([os.path.join(right_dir, fname) for fname\
-                                in os.listdir(right_dir)])
-            assert len(self.right_paths) == len(self.left_paths)
-        self.transform = transform
-        self.training = training
-
-    def __len__(self):
-        return len(self.left_paths)
-
-    def __getitem__(self, idx):
-        left_image = Image.open(self.left_paths[idx])
-        if self.training:
-            right_image = Image.open(self.right_paths[idx])
-            sample = {'left_image': left_image, 'right_image': right_image}
-
-            if self.transform:
-                sample = self.transform(sample)
-                return sample
-            else:
-                return sample
-        else:
-            if self.transform:
-                left_image = self.transform(left_image)
-            return left_image
 
 
 class KittiLoader(Dataset):
