@@ -10,7 +10,7 @@ import torch.optim as optim
 # custom modules
 
 from loss import MonodepthLoss
-from data_loader import image_transforms, KittiLoader, ImageLoader
+from data_loader import image_transforms, KittiLoader
 import models_resnet
 
 # plot params
@@ -111,6 +111,7 @@ class Model:
 
     def __init__(self, args):
         self.args = args
+
         if args.mode == 'train':
             # Load data
             data_dirs = os.listdir(args.data_dir)
@@ -146,6 +147,7 @@ class Model:
                                         lr=args.learning_rate)
             if args.tensor_type == 'torch.cuda.FloatTensor':
                 torch.cuda.synchronize()
+
         elif args.mode == 'test':
             # Load data
             self.output_directory = args.output_directory
@@ -153,8 +155,12 @@ class Model:
             self.input_width = args.input_width
             data_transform = image_transforms(mode=args.mode,
                                               tensor_type=args.tensor_type)
-            test_dataset = ImageLoader(args.data_dir, False,
-                                       transform=data_transform)
+            data_transform_test = image_transforms(
+                mode=args.mode,
+                tensor_type=args.tensor_type,
+                do_augmentation=False)
+            test_dataset = KittiLoader(args.data_dir, False,
+                                       transform=data_transform_test)
             self.num_test_examples = len(test_dataset)
             self.test_loader = DataLoader(test_dataset, batch_size=1,
                                           shuffle=False)
@@ -267,7 +273,6 @@ class Model:
             for (i, data) in enumerate(self.test_loader):
                 # Get the inputs
                 left = data.squeeze()
-
                 # Do a forward pass
                 # print(left.type())
                 disps = self.model(left)
