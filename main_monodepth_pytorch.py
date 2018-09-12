@@ -3,15 +3,16 @@ import os
 import time
 import torch
 from torch.utils.data import DataLoader, ConcatDataset
-import torchvision.transforms as transforms
 import numpy as np
 import torch.optim as optim
 
 # custom modules
 
 from loss import MonodepthLoss
-from data_loader import image_transforms, KittiLoader
-import models_resnet
+from data_loader import KittiLoader
+from transforms import image_transforms
+from utils import get_model, to_device, prepare_dataloader
+
 
 # plot params
 
@@ -28,6 +29,12 @@ def return_arguments():
                         It should contain subfolders with following structure:\
                         "image_02/data" for left images and \
                         "image_03/data" for right images'
+                        )
+    parser.add_argument('val_data_dir',
+                        help='path to the validation dataset folder. \
+                            It should contain subfolders with following structure:\
+                            "image_02/data" for left images and \
+                            "image_03/data" for right images'
                         )
     parser.add_argument('model_path', help='path to the trained model')
     parser.add_argument('output_directory',
@@ -54,10 +61,9 @@ def return_arguments():
                         help='apply learning rate decay or not\
                         (default: True)'
                         )
-    parser.add_argument('--tensor_type',
-                        default='torch.cuda.FloatTensor',
-                        help='choose type for GPU "torch.cuda.FloatTensor" \
-                              or type for CPU "torch.FloatTensor"'
+    parser.add_argument('--device',
+                        default='gpu',
+                        help='choose gpu or cuda:0 device"'
                         )
     parser.add_argument('--do_augmentation', default=True,
                         help='do augmentation of images or not')
@@ -84,7 +90,7 @@ def return_arguments():
 
 def adjust_learning_rate(optimizer, epoch, learning_rate):
     """Sets the learning rate to the initial LR\
-        decayed by 10 every 30 epochs"""
+        decayed by 2 every 10 epochs after 30 epoches"""
 
     if epoch >= 30 and epoch < 40:
         lr = learning_rate / 2
@@ -112,81 +118,67 @@ class Model:
     def __init__(self, args):
         self.args = args
 
+        # Set up model
+        self.device = args.device
+        self.model = get_model(args.model)
+        self.model = self.model.to(self.device)
+
         if args.mode == 'train':
-            # Load data
-            data_dirs = os.listdir(args.data_dir)
-            data_transform = image_transforms(
-                    mode=args.mode,
-                    tensor_type=args.tensor_type,
-                    augment_parameters=args.augment_parameters,
-                    do_augmentation=args.do_augmentation)
-            train_datasets = [KittiLoader(os.path.join(args.data_dir,
-                              data_dir), True,
-                              transform=data_transform) for data_dir in
-                              data_dirs]
-            train_dataset = ConcatDataset(train_datasets)
-            self.n_img = len(train_dataset)
-            print('Use a dataset with', self.n_img, 'images')
-            self.train_loader = DataLoader(train_dataset,
-                                           batch_size=args.batch_size,  
-                                           shuffle=True)
-            # Set up model
-            self.device = torch.device((
-                'cuda:0' if torch.cuda.is_available() and
-                args.tensor_type == 'torch.cuda.FloatTensor' else 'cpu'))
             self.loss_function = MonodepthLoss(
-                    n=4,
-                    SSIM_w=0.85,
-                    disp_gradient_w=0.1, lr_w=1).to(self.device)
-            if args.model == 'resnet50_md':
-                self.model = models_resnet.resnet50_md(3)
-            elif args.model == 'resnet18_md':
-                self.model = models_resnet.resnet18_md(3)
-            self.model = self.model.to(self.device)
+                n=4,
+                SSIM_w=0.85,
+                disp_gradient_w=0.1, lr_w=1).to(self.device)
             self.optimizer = optim.Adam(self.model.parameters(),
                                         lr=args.learning_rate)
-            if args.tensor_type == 'torch.cuda.FloatTensor':
-                torch.cuda.synchronize()
-
-        elif args.mode == 'test':
-            # Load data
-            self.output_directory = args.output_directory
-            self.input_height = args.input_height
-            self.input_width = args.input_width
-            data_transform = image_transforms(mode=args.mode,
-                                              tensor_type=args.tensor_type)
-            data_transform_test = image_transforms(
-                mode=args.mode,
-                tensor_type=args.tensor_type,
-                do_augmentation=False)
-            test_dataset = KittiLoader(args.data_dir, False,
-                                       transform=data_transform_test)
-            self.num_test_examples = len(test_dataset)
-            self.test_loader = DataLoader(test_dataset, batch_size=1,
-                                          shuffle=False)
-            # Set up model
-            self.device = torch.device((
-                'cuda:0' if torch.cuda.is_available() and
-                args.tensor_type == 'torch.cuda.FloatTensor' else 'cpu'))
-            if args.model == 'resnet50_md':
-                self.model = models_resnet.resnet50_md(3)
-            elif args.model == 'resnet18_md':
-                self.model = models_resnet.resnet18_md(3)
+            self.val_n_img, self.val_loader = prepare_dataloader(args.val_data_dir, args.mode, args.augment_parameters,
+                                                                 False, args.batch_size,
+                                                                 (args.input_height, args.input_width))
+        else:
             self.model.load_state_dict(torch.load(args.model_path))
-            self.model = self.model.to(self.device)
+            args.augment_parameters = None
+            args.do_augmentation = False
+            args.batch_size = 1
+
+        # Load data
+        self.output_directory = args.output_directory
+        self.input_height = args.input_height
+        self.input_width = args.input_width
+
+        self.n_img, self.loader = prepare_dataloader(args.data_dir, args.mode, args.augment_parameters,
+                                                     args.do_augmentation, args.batch_size,
+                                                     (args.input_height, args.input_width))
+
+
+        if self.device == 'cuda:0':
+            torch.cuda.synchronize()
+
 
     def train(self):
         losses = []
+        val_losses = []
         best_loss = float('Inf')
+        best_val_loss = float('Inf')
         self.model.train()
         for epoch in range(self.args.epochs):
             if self.args.adjust_lr:
                 adjust_learning_rate(self.optimizer, epoch,
                                      self.args.learning_rate)
-            running_loss = 0.0
+
+
             c_time = time.time()
-            for data in self.train_loader:
+            running_val_loss = 0.0
+            for data in self.val_loader:
+                data = to_device(data, self.device)
+                left = data['left_image']
+                right = data['right_image']
+                disps = self.model(left)
+                loss = self.loss_function(disps, [left, right])
+                val_losses.append(loss.item())
+                running_val_loss += loss.item()
+            running_loss = 0.0
+            for data in self.loader:
                 # Load data
+                data = to_device(data, self.device)
                 left = data['left_image']
                 right = data['right_image']
 
@@ -237,20 +229,22 @@ class Model:
 
             # Estimate loss per image
             running_loss /= self.n_img / self.args.batch_size
+            running_val_loss /= self.val_n_img / self.args.batch_size
             print (
                 'Epoch:',
                 epoch + 1,
-                'loss:',
+                'train_loss:',
+                running_loss,
+                'val_loss:',
                 running_loss,
                 'time:',
                 round(time.time() - c_time, 3),
                 's',
                 )
-            if running_loss < best_loss:
+            if running_val_loss < best_val_loss:
                 self.save(self.args.model_path[:-4] + '_cpt.pth')
-                best_loss = running_loss
+                best_val_loss = running_val_loss
                 print('Model_saved')
-            running_loss = 0.0
 
         print ('Finished Training. Best loss:', best_loss)
         self.save(self.args.model_path)
@@ -263,15 +257,16 @@ class Model:
 
     def test(self):
         self.model.eval()
-        disparities = np.zeros((self.num_test_examples,
+        disparities = np.zeros((self.n_img,
                                self.input_height, self.input_width),
                                dtype=np.float32)
-        disparities_pp = np.zeros((self.num_test_examples,
+        disparities_pp = np.zeros((self.n_img,
                                   self.input_height, self.input_width),
                                   dtype=np.float32)
         with torch.no_grad():
-            for (i, data) in enumerate(self.test_loader):
+            for (i, data) in enumerate(self.loader):
                 # Get the inputs
+                data = to_device(data, self.device)
                 left = data.squeeze()
                 # Do a forward pass
                 # print(left.type())
