@@ -158,24 +158,28 @@ class Model:
         val_losses = []
         best_loss = float('Inf')
         best_val_loss = float('Inf')
-        self.model.train()
+
+        running_val_loss = 0.0
+        self.model.eval()
+        for data in self.val_loader:
+            data = to_device(data, self.device)
+            left = data['left_image']
+            right = data['right_image']
+            disps = self.model(left)
+            loss = self.loss_function(disps, [left, right])
+            val_losses.append(loss.item())
+            running_val_loss += loss.item()
+
+        running_val_loss /= self.val_n_img / self.args.batch_size
+        print('Val_loss:', running_val_loss)
+
         for epoch in range(self.args.epochs):
             if self.args.adjust_lr:
                 adjust_learning_rate(self.optimizer, epoch,
                                      self.args.learning_rate)
-
-
             c_time = time.time()
-            running_val_loss = 0.0
-            for data in self.val_loader:
-                data = to_device(data, self.device)
-                left = data['left_image']
-                right = data['right_image']
-                disps = self.model(left)
-                loss = self.loss_function(disps, [left, right])
-                val_losses.append(loss.item())
-                running_val_loss += loss.item()
             running_loss = 0.0
+            self.model.train()
             for data in self.loader:
                 # Load data
                 data = to_device(data, self.device)
@@ -227,6 +231,17 @@ class Model:
                     plt.show()
                 running_loss += loss.item()
 
+            running_val_loss = 0.0
+            self.model.eval()
+            for data in self.val_loader:
+                data = to_device(data, self.device)
+                left = data['left_image']
+                right = data['right_image']
+                disps = self.model(left)
+                loss = self.loss_function(disps, [left, right])
+                val_losses.append(loss.item())
+                running_val_loss += loss.item()
+
             # Estimate loss per image
             running_loss /= self.n_img / self.args.batch_size
             running_val_loss /= self.val_n_img / self.args.batch_size
@@ -236,11 +251,12 @@ class Model:
                 'train_loss:',
                 running_loss,
                 'val_loss:',
-                running_loss,
+                running_val_loss,
                 'time:',
                 round(time.time() - c_time, 3),
                 's',
                 )
+            self.save(self.args.model_path[:-4] + '_last.pth')
             if running_val_loss < best_val_loss:
                 self.save(self.args.model_path[:-4] + '_cpt.pth')
                 best_val_loss = running_val_loss
