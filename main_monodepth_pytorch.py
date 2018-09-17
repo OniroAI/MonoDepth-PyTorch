@@ -45,9 +45,13 @@ def return_arguments():
                         default=256)
     parser.add_argument('--input_width', type=int, help='input width',
                         default=512)
-    parser.add_argument('--model', default='resnet50_md',
+    parser.add_argument('--model', default='resnet18_md',
                         help='encoder architecture: ' +
-                        'resnet18 or resnet50' + '(default: resnet50)'
+                        'resnet18_md or resnet50_md ' + '(default: resnet18)'
+                        + 'or torchvision version of any resnet model'
+                        )
+    parser.add_argument('--pretrained', default=False,
+                        help='Use weights of pretrained model'
                         )
     parser.add_argument('--mode', default='train',
                         help='mode: train or test (default: train)')
@@ -84,6 +88,8 @@ def return_arguments():
                         )
     parser.add_argument('--print_weights', default=False,
                         help='print weights of every layer')
+    parser.add_argument('--input_channels', default=3,
+                        help='Number of channels in input tensor')
     args = parser.parse_args()
     return args
 
@@ -120,7 +126,7 @@ class Model:
 
         # Set up model
         self.device = args.device
-        self.model = get_model(args.model)
+        self.model = get_model(args.model, input_channels=args.input_channels, pretrained=args.pretrained)
         self.model = self.model.to(self.device)
 
         if args.mode == 'train':
