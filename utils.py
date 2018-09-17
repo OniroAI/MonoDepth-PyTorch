@@ -3,7 +3,8 @@ import collections
 import os
 from torch.utils.data import DataLoader, ConcatDataset
 
-import models_resnet
+
+from models_resnet import Resnet18_md, Resnet50_md, ResnetModel
 from data_loader import KittiLoader
 from transforms import image_transforms
 
@@ -20,11 +21,13 @@ def to_device(input, device):
         raise TypeError(f"Input must contain tensor, dict or list, found {type(input)}")
 
 
-def get_model(model):
+def get_model(model, input_channels=3, pretrained=False):
     if model == 'resnet50_md':
-        out_model = models_resnet.resnet50_md(3)
+        out_model = Resnet50_md(input_channels)
     elif model == 'resnet18_md':
-        out_model = models_resnet.resnet18_md(3)
+        out_model = Resnet18_md(input_channels)
+    else:
+        out_model = ResnetModel(input_channels, encoder=model, pretrained=pretrained)
     return out_model
 
 
@@ -45,3 +48,5 @@ def prepare_dataloader(data_directory, mode, augment_parameters, do_augmentation
     loader = DataLoader(dataset, batch_size= batch_size,
                         shuffle=True)
     return n_img, loader
+
+
