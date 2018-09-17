@@ -1,18 +1,13 @@
 import argparse
-import os
 import time
 import torch
-from torch.utils.data import DataLoader, ConcatDataset
 import numpy as np
 import torch.optim as optim
 
 # custom modules
 
 from loss import MonodepthLoss
-from data_loader import KittiLoader
-from transforms import image_transforms
 from utils import get_model, to_device, prepare_dataloader
-
 
 # plot params
 
