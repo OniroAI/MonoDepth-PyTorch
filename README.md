@@ -12,8 +12,8 @@ This repository contains code and additional parts for the PyTorch port of the M
 ## Purpose
 
 Purpose of this repository is to make more lightweighted model for depth estimation with better accuracy.
-In our version of MonoDepth we used Resnet50 as encoder. It was slightly changed (with one more lateral shrinkage) as well as in the original repo
-ALso we add Resnet18 version and used batch normalisation in both cases for training stability.
+In our version of MonoDepth we used Resnet50 as encoder. It was slightly changed (with one more lateral shrinkage) as well as in the original repo.
+Also we add Resnet18 version and used batch normalisation in both cases for training stability.
 Moreover, we made flexible feature extractor with any version of original Resnet from torchvision models zoo
  with option to use pretrained models.
 
