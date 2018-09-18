@@ -137,7 +137,7 @@ class get_disp(nn.Module):
 
 class Resnet50_md(nn.Module):
     def __init__(self, num_in_layers):
-        super(resnet50_md, self).__init__()
+        super(Resnet50_md, self).__init__()
         # encoder
         self.conv1 = conv(num_in_layers, 64, 7, 2)  # H/2  -   64D
         self.pool1 = maxpool(3)  # H/4  -   64D
@@ -225,7 +225,7 @@ class Resnet50_md(nn.Module):
 
 class Resnet18_md(nn.Module):
     def __init__(self, num_in_layers):
-        super(resnet18_md, self).__init__()
+        super(Resnet18_md, self).__init__()
         # encoder
         self.conv1 = conv(num_in_layers, 64, 7, 2)  # H/2  -   64D
         self.pool1 = maxpool(3)  # H/4  -   64D
