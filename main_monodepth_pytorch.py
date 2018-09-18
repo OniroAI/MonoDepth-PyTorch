@@ -87,6 +87,7 @@ def return_arguments():
                         help='Number of channels in input tensor')
     parser.add_argument('--num_workers', default=4,
                         help='Number of workers in dataloader')
+    parser.add_argument('--use_multiple_gpu', default=False)
     args = parser.parse_args()
     return args
 
@@ -125,6 +126,8 @@ class Model:
         self.device = args.device
         self.model = get_model(args.model, input_channels=args.input_channels, pretrained=args.pretrained)
         self.model = self.model.to(self.device)
+        if args.use_multiple_gpu:
+            self.model = torch.nn.DataParallel(self.model)
 
         if args.mode == 'train':
             self.loss_function = MonodepthLoss(
