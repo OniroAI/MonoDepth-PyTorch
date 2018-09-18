@@ -85,6 +85,8 @@ def return_arguments():
                         help='print weights of every layer')
     parser.add_argument('--input_channels', default=3,
                         help='Number of channels in input tensor')
+    parser.add_argument('--num_workers', default=4,
+                        help='Number of workers in dataloader')
     args = parser.parse_args()
     return args
 
@@ -131,9 +133,11 @@ class Model:
                 disp_gradient_w=0.1, lr_w=1).to(self.device)
             self.optimizer = optim.Adam(self.model.parameters(),
                                         lr=args.learning_rate)
-            self.val_n_img, self.val_loader = prepare_dataloader(args.val_data_dir, args.mode, args.augment_parameters,
+            self.val_n_img, self.val_loader = prepare_dataloader(args.val_data_dir, args.mode,
+                                                                 args.augment_parameters,
                                                                  False, args.batch_size,
-                                                                 (args.input_height, args.input_width))
+                                                                 (args.input_height, args.input_width),
+                                                                 args.num_workers)
         else:
             self.model.load_state_dict(torch.load(args.model_path))
             args.augment_parameters = None
@@ -147,7 +151,8 @@ class Model:
 
         self.n_img, self.loader = prepare_dataloader(args.data_dir, args.mode, args.augment_parameters,
                                                      args.do_augmentation, args.batch_size,
-                                                     (args.input_height, args.input_width))
+                                                     (args.input_height, args.input_width),
+                                                     args.num_workers)
 
 
         if self.device == 'cuda:0':

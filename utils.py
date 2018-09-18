@@ -31,7 +31,7 @@ def get_model(model, input_channels=3, pretrained=False):
     return out_model
 
 
-def prepare_dataloader(data_directory, mode, augment_parameters, do_augmentation, batch_size, size):
+def prepare_dataloader(data_directory, mode, augment_parameters, do_augmentation, batch_size, size, num_workers):
     data_dirs = os.listdir(data_directory)
     data_transform = image_transforms(
         mode=mode,
@@ -46,7 +46,7 @@ def prepare_dataloader(data_directory, mode, augment_parameters, do_augmentation
     n_img = len(dataset)
     print('Use a dataset with', n_img, 'images')
     loader = DataLoader(dataset, batch_size= batch_size,
-                        shuffle=True)
+                        shuffle=True, num_workers=num_workers)
     return n_img, loader
 
 
