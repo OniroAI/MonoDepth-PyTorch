@@ -93,12 +93,24 @@ Also, it can be started via calling main_monodepth_pytorch.py through the termin
 Results presented on the gif image were obtained using the model with a **resnet18** as an encoder, which can be downloaded from [here](https://my.pcloud.com/publink/show?code=XZb5r97ZD7HDDlc237BMjoCbWJVYMm0FLKcy).
 
 For training the following parameters were used:
+```
 `model`: 'resnet18_md'
 `epochs`: 200,
 `learning_rate`: 1e-4,
 `batch_size`: 8,
 `adjust_lr`: True,
 `do_augmentation`: True
+```
+The provided model was trained on the whole dataset, except subsets, listed below, which were used for a hold-out validation.
+
+```
+2011_09_26_drive_0002_sync  2011_09_29_drive_0071_sync
+2011_09_26_drive_0014_sync  2011_09_30_drive_0033_sync
+2011_09_26_drive_0020_sync  2011_10_03_drive_0042_sync
+2011_09_26_drive_0079_sync
+```
+
+The demo gif image is a visualization of the predictions on `2011_09_26_drive_0014_sync` subset.
 
 See [Monodepth](Monodepth.ipynb) notebook for the details on the training.
     
