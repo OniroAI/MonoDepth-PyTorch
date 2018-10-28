@@ -64,11 +64,11 @@ class ToTensor(object):
             right_image = sample['right_image']
             new_right_image = self.transform(right_image)
             new_left_image = self.transform(left_image)
-            sample = {'left_image': new_left_image, 'right_image': new_right_image}
+            sample = {'left_image': new_left_image,
+                      'right_image': new_right_image}
         else:
             left_image = sample
-            new_left_image = self.transform(left_image)
-            sample = new_left_image
+            sample = self.transform(left_image)
         return sample
 
 
@@ -83,8 +83,8 @@ class RandomFlip(object):
         k = np.random.uniform(0, 1, 1)
         if self.do_augmentation:
             if k > 0.5:
-                fliped_left = self.transform(left_image)
-                fliped_right = self.transform(right_image)
+                fliped_left = self.transform(right_image)
+                fliped_right = self.transform(left_image)
                 sample = {'left_image': fliped_left, 'right_image': fliped_right}
         else:
             sample = {'left_image': left_image, 'right_image': right_image}
