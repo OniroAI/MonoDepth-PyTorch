@@ -2,26 +2,21 @@
 ![demo.gif animation](readme_images/demo.gif)
 
 This repo is inspired by an amazing work of [Clément Godard](http://www0.cs.ucl.ac.uk/staff/C.Godard/), [Oisin Mac Aodha](http://vision.caltech.edu/~macaodha/) and [Gabriel J. Brostow](http://www0.cs.ucl.ac.uk/staff/g.brostow/) for Unsupervised Monocular Depth Estimation.
-Original code and paper could be found via following links:
+Original code and paper could be found via the following links:
 1. [Original repo](https://github.com/mrharicot/monodepth)
 2. [Original paper](https://arxiv.org/abs/1609.03677)
 
 ## MonoDepth-PyTorch
-This repository contains code and additional parts for the PyTorch port of the MonoDepth Deep Learning algorithm. For more information about original work please visit [author's website](http://visual.cs.ucl.ac.uk/pubs/monoDepth/)
+This repository contains code and additional parts for the PyTorch port of the MonoDepth Deep Learning algorithm. For more information about original work, please visit [author's website](http://visual.cs.ucl.ac.uk/pubs/monoDepth/)
 
 ## Purpose
 
-Purpose of this repository is to make more lightweighted model for depth estimation with better accuracy.
-In our version of MonoDepth we used Resnet50 as encoder. It was slightly changed (with one more lateral shrinkage) as well as in the original repo.
-Also we add Resnet18 version and used batch normalisation in both cases for training stability.
+Purpose of this repository is to make a more lightweight model for depth estimation with better accuracy.
+In our version of MonoDepth, we used ResNet50 as an encoder. It was slightly changed (with one more lateral shrinkage) as well as in the original repo.
+
+Also, we add ResNet18 version and used batch normalization in both cases for training stability.
 Moreover, we made flexible feature extractor with any version of original Resnet from torchvision models zoo
- with option to use pretrained models.
-
-## Train results
-
-Results presented on the gif may be obtained using the model pretrained for **150** epochs on the whole dataset with initial **lr = 0.01** and **batch_size = 20** with **resnet18** as encoder.
-
-
+ with an option to use pretrained models.
 
 ## Dataset
 ### KITTI
@@ -87,24 +82,28 @@ Model class from main_monodepth_pytorch.py should be initialized with following 
  - `input_channels` Number of channels in input tensor (3 for RGB images)
  - `num_workers` Number of workers to use in dataloader
 
-Optionally after initialization we can load pretrained model via load model.
+Optionally after initialization, we can load a pretrained model via `model.load`.
 
-After that calling train() on Model class object starts training process.
+After that calling train() on Model class object starts the training process.
 
-Also it can be started via calling main_monodepth_pytorch.py through the terminal and feeding parameters as argparse arguments.
+Also, it can be started via calling main_monodepth_pytorch.py through the terminal and feeding parameters as argparse arguments.
 
-## Pretrained model
+## Train results and pretrained model
 
-One of our pretrained models which showed best results may be downloaded from [here](https://my.pcloud.com/publink/show?code=XZdFzu7ZfCAEf0uj8zRhDrBsjuEoeSo2QXak).
-For training following parameters were used:
-`model`:'resnet18_md'
-`epochs`:150,
-`learning_rate`:1e-2,
-`batch_size`:20,
-`adjust_lr`:True 
+Results presented on the gif image were obtained using the model with a **resnet18** as an encoder, which can be downloaded from [here](https://my.pcloud.com/publink/show?code=XZb5r97ZD7HDDlc237BMjoCbWJVYMm0FLKcy).
+
+For training the following parameters were used:
+`model`: 'resnet18_md'
+`epochs`: 200,
+`learning_rate`: 1e-4,
+`batch_size`: 8,
+`adjust_lr`: True,
+`do_augmentation`: True
+
+See [Monodepth](Monodepth.ipynb) notebook for the details on the training.
     
 ## Testing
-Example of testing can be find in [Monodepth](Monodepth.ipynb) notebook.
+Example of testing can also be find in [Monodepth](Monodepth.ipynb) notebook.
 
 Model class from main_monodepth_pytorch.py should be initialized with following params (as easydict) for testing:
  - `data_dir`: path to the dataset folder
@@ -120,7 +119,14 @@ Model class from main_monodepth_pytorch.py should be initialized with following 
  
 After that calling test() on Model class object starts testing process.
 
-Also it can be started via calling [main_monodepth_pytorch.py](main_monodepth_pytorch.py) through the terminal and feeding parameters asargparse arguments. 
+Also it can be started via calling [main_monodepth_pytorch.py](main_monodepth_pytorch.py) through the terminal and feeding parameters as argparse arguments. 
     
 ## Requirements
-This code was tested with PyTorch 0.4.1, CUDA 9.1 and Ubuntu 16.04.
+This code was tested with PyTorch 0.4.1, CUDA 9.1 and Ubuntu 16.04. Other required modules:
+
+```
+torchvision
+numpy
+matplotlib
+easydict
+```
