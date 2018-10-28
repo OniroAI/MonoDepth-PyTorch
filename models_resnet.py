@@ -55,7 +55,7 @@ class resconv(nn.Module):
         self.normalize = nn.BatchNorm2d(4*num_out_layers)
 
     def forward(self, x):
-        #         do_proj = x.size()[1] != self.num_out_layers or self.stride == 2
+        # do_proj = x.size()[1] != self.num_out_layers or self.stride == 2
         do_proj = True
         shortcut = []
         x_out = self.conv1(x)

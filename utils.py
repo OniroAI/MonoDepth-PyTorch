@@ -31,7 +31,8 @@ def get_model(model, input_channels=3, pretrained=False):
     return out_model
 
 
-def prepare_dataloader(data_directory, mode, augment_parameters, do_augmentation, batch_size, size, num_workers):
+def prepare_dataloader(data_directory, mode, augment_parameters,
+                       do_augmentation, batch_size, size, num_workers):
     data_dirs = os.listdir(data_directory)
     data_transform = image_transforms(
         mode=mode,
@@ -39,16 +40,17 @@ def prepare_dataloader(data_directory, mode, augment_parameters, do_augmentation
         do_augmentation=do_augmentation,
         size = size)
     datasets = [KittiLoader(os.path.join(data_directory,
-                                               data_dir), mode,
-                                  transform=data_transform) for data_dir in
-                      data_dirs]
+                            data_dir), mode, transform=data_transform)
+                            for data_dir in data_dirs]
     dataset = ConcatDataset(datasets)
     n_img = len(dataset)
     print('Use a dataset with', n_img, 'images')
     if mode == 'train':
         loader = DataLoader(dataset, batch_size=batch_size,
-                            shuffle=True, num_workers=num_workers)
+                            shuffle=True, num_workers=num_workers,
+                            pin_memory=True)
     else:
         loader = DataLoader(dataset, batch_size=batch_size,
-                            shuffle=False, num_workers=num_workers)
+                            shuffle=False, num_workers=num_workers,
+                            pin_memory=True)
     return n_img, loader

@@ -20,34 +20,38 @@ class MonodepthLoss(nn.modules.Module):
             ratio = 2 ** (i + 1)
             nh = h // ratio
             nw = w // ratio
-            scaled_imgs.append(nn.functional.interpolate(img, size=[nh, nw],
-                               mode='bilinear', align_corners=True))
+            scaled_imgs.append(nn.functional.interpolate(img,
+                               size=[nh, nw], mode='bilinear',
+                               align_corners=True))
         return scaled_imgs
 
     def gradient_x(self, img):
         # Pad input to keep output size consistent
         img = F.pad(img, (0, 1, 0, 0), mode="replicate")
-        gx = img[:,:,:,:-1] - img[:,:,:,1:]  # NCHW
+        gx = img[:, :, :, :-1] - img[:, :, :, 1:]  # NCHW
         return gx
 
     def gradient_y(self, img):
         # Pad input to keep output size consistent
         img = F.pad(img, (0, 0, 0, 1), mode="replicate")
-        gy = img[:,:,:-1,:] - img[:,:,1:,:]  # NCHW
+        gy = img[:, :, :-1, :] - img[:, :, 1:, :]  # NCHW
         return gy
 
     def apply_disparity(self, img, disp):
         batch_size, _, height, width = img.size()
 
         # Original coordinates of pixels
-        x_base = torch.linspace(0, 1, width).repeat(batch_size, height, 1).type_as(img)
-        y_base = torch.linspace(0, 1, height).repeat(batch_size, width, 1).transpose(1, 2).type_as(img)
+        x_base = torch.linspace(0, 1, width).repeat(batch_size,
+                    height, 1).type_as(img)
+        y_base = torch.linspace(0, 1, height).repeat(batch_size,
+                    width, 1).transpose(1, 2).type_as(img)
 
         # Apply shift in X direction
         x_shifts = disp[:, 0, :, :]  # Disparity is passed in NCHW format with 1 channel
         flow_field = torch.stack((x_base + x_shifts, y_base), dim=3)
         # In grid_sample coordinates are assumed to be between -1 and 1
-        output = F.grid_sample(img, 2*flow_field - 1, mode='bilinear', padding_mode='zeros')
+        output = F.grid_sample(img, 2*flow_field - 1, mode='bilinear',
+                               padding_mode='zeros')
 
         return output
 
@@ -168,11 +172,11 @@ class MonodepthLoss(nn.modules.Module):
                           disp_left_smoothness[i])) / 2 ** i
                           for i in range(self.n)]
         disp_right_loss = [torch.mean(torch.abs(
-                          disp_right_smoothness[i])) / 2 ** i
+                           disp_right_smoothness[i])) / 2 ** i
                            for i in range(self.n)]
         disp_gradient_loss = sum(disp_left_loss + disp_right_loss)
 
-        loss = image_loss + self.disp_gradient_w * disp_gradient_loss \
+        loss = image_loss + self.disp_gradient_w * disp_gradient_loss\
                + self.lr_w * lr_loss
         self.image_loss = image_loss
         self.disp_gradient_loss = disp_gradient_loss
