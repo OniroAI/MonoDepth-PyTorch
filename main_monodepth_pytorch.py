@@ -61,8 +61,8 @@ def return_arguments():
                         (default: True)'
                         )
     parser.add_argument('--device',
-                        default='gpu',
-                        help='choose gpu or cuda:0 device"'
+                        default='cuda:0',
+                        help='choose cpu or cuda:0 device"'
                         )
     parser.add_argument('--do_augmentation', default=True,
                         help='do augmentation of images or not')
@@ -158,7 +158,7 @@ class Model:
                                                      args.num_workers)
 
 
-        if self.device == 'cuda:0':
+        if 'cuda' in self.device:
             torch.cuda.synchronize()
 
 
@@ -223,9 +223,9 @@ class Model:
                                      (1, 2, 0))))
                     plt.show()
                     print('left_est[0]')
-                    plt.imshow(np.transpose(self.loss_function.left_est[0][0,
-                               :, :, :].cpu().detach().numpy(), (1, 2,
-                               0)))
+                    plt.imshow(np.transpose(self.loss_function\
+                        .left_est[0][0, :, :, :].cpu().detach().numpy(),
+                        (1, 2, 0)))
                     plt.show()
                     print('disp_right_est[0]')
                     plt.imshow(np.squeeze(
@@ -294,12 +294,12 @@ class Model:
                 data = to_device(data, self.device)
                 left = data.squeeze()
                 # Do a forward pass
-                # print(left.type())
                 disps = self.model(left)
                 disp = disps[0][:, 0, :, :].unsqueeze(1)
-                disparities[i] = disp[0].squeeze()
+                disparities[i] = disp[0].squeeze().cpu().numpy()
                 disparities_pp[i] = \
-                    post_process_disparity(disp.squeeze().cpu().numpy())
+                    post_process_disparity(disps[0][:, 0, :, :]\
+                                           .cpu().numpy())
 
         np.save(self.output_directory + '/disparities.npy', disparities)
         np.save(self.output_directory + '/disparities_pp.npy',
